@@ -1,2 +1,4 @@
 
-db*.php
+db.php
+db_wordpress.php
+
