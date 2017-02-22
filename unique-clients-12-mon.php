@@ -1,45 +1,78 @@
 <?php
 
     include "db.php";
+    include "util.php";
 
-    echo "Report Active Hosts by Month\n";
+    echo "Report - Unique clients 12 months\n";
 
-    $myfile = fopen("unique-clients-12-mon.csv", "w") or die("Unable to open file!");
+    $starttime = microtime(true);
 
     $myquery = "
-            select host, clientAddr, count(*) as t_count
-            from jbrowse_client_log 
-            where FROM_UNIXTIME(reportTime) BETWEEN NOW() - INTERVAL 365 DAY AND NOW()
-            group by host, clientAddr having t_count > 4
-            order by t_count DESC
 
+select 
+    host, 
+    clientAddr,
+    CONCAT(YEAR(FROM_UNIXTIME(reportTime)),'-', LPAD(MONTH(FROM_UNIXTIME(reportTime)),2,'0')) as t_month,
 
-    ";
+from last12months 
+where FROM_UNIXTIME(reportTime) BETWEEN NOW() - INTERVAL 365 DAY AND NOW()
+
+";
 
     $result = mysql_query( $myquery );
     if (!$result) {
             die('Invalid query: ' . mysql_error());
     }
     $count = 0;
-    while ($row = mysql_fetch_array( $result, MYSQL_NUM)) {
-            //echo count($row)."\n";
-            //if ($row[0]=="") continue;
-            //if ($row[0]=="jbrowse.org") continue;
-            //if (strstr($row[0],"localhost")) continue;
-            //if (strstr($row[0],"127.0.0.1")) continue;
-            $txt = "";
-            for($i = 0;$i < sizeof($row);$i++) {
-                    if ($i!= 0) $txt .= ",";
-                    $txt .= $row[$i];
-            }
-            $txt .= "\n";
-      fwrite($myfile, $txt);
-      $count++;
+    $hosts = array();
+    while ($row = mysql_fetch_assoc( $result)) {
+
+        $host = $row['host'];
+        $clientAddr = $row['clientAddr'];
+            
+        // initialize if necessary
+        if (!isset($hosts[$host])) {
+            $hosts[$host] = array(
+                'count' => 0,
+                'clients' => array(
+                )
+            );
+        }
+        if (!isset($hosts[$host]['clients'][$clientAddr])) {
+            $hosts[$host]['clients'][$clientAddr] = 0;
+        }
+        
+        $hosts[$host]['count']++;
+        $hosts[$host]['clients'][$clientAddr]++;
+
+        $count ++;
     }
 
-    echo("$count total rows\n");
+    echo("$count total rows, ".sizeof($hosts)." unique hosts\n");
+    
+    echo("writing output\n");
+    
+    $myfile = fopen("unique-clients-12-mon.csv", "w") or die("Unable to open file!");
+    fwrite($myfile,"host,accesses, distinct client count\n");
 
+    foreach ($hosts as $host => $data) {
+        $client_count = 0;
+        foreach ($data['clients'] as $clientcount) $client_count += $clientcount;
+        
+        $txt = "";
+        $txt .= "$host, ";
+        $txt .= $data['count'].', ';            // host count
+        $txt .= sizeof($data['clients']).', ';  // distinct client count
+        $txt .= "\n";
+        fwrite($myfile,$txt);
+        
+    }
+    
     fclose($myfile);
+
+    $endtime = microtime(true);
+    $timediff = $endtime - $starttime;
+    echo "elapsed time: ".convertElapsedTime($timediff)."\n";
 
     mysql_close( $dbh );
 
