@@ -2,14 +2,14 @@
     include "util.php";
     include "db.php";
 
-    echo "Report - large trackcounts (> 2000, last 12 months\n";
+    echo "Report - large trackcounts (> 5000, last 12 months\n";
     
     $myfile = fopen("track-large-referer.csv", "w") or die("Unable to open file!");
 
     // by month
     $myquery = "
             select host, trackCount, 
-                CONCAT(YEAR(FROM_UNIXTIME(reportTime)),'-', LPAD(MONTH(FROM_UNIXTIME(reportTime)),2,'0')) as t_month,
+                FROM_UNIXTIME(reportTime),
                 referer
             from last12months 
             where FROM_UNIXTIME(reportTime) BETWEEN NOW() - INTERVAL 365 DAY AND NOW() and trackCount > 5000
@@ -24,7 +24,7 @@
     }
     $count = 0;
     fwrite($myfile,"How many times each trackCount value was seen (unfiltered) \n");    // headers
-    fwrite($myfile,"trackCount,count\n");    // headers
+    fwrite($myfile,"host,trackCount,time,referer\n");    // headers
 
     while ($row = mysql_fetch_array( $result, MYSQL_NUM)) {
             $txt = "";
