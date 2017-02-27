@@ -16,3 +16,6 @@ yearly:
 
 other:
 	php accesses-by-host-all.php
+
+charts:
+	Rscript charts.R
