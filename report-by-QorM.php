@@ -3,11 +3,11 @@
  * Monthy or Quarterly report of the following:
  * accesses,unique hosts, unique clients,tracks-mean, tracks-hi, tracks-mode,plugins-mean, plugins-hi, plugins-mode
  */
-
+    ini_set('memory_limit', '2048M');
     include "db.php";
     include "util.php";
 
-    echo "Report - Reports by Month\n";
+    echo "Report - Reports by: ";
     
     $starttime = microtime(true);
 
@@ -24,7 +24,7 @@
             $orderby = 'MONTH';
             $prefix = '';
         }
-        
+		echo $orderby."\n";
     }
     
     $myquery = "
