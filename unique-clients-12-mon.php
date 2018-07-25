@@ -8,22 +8,20 @@
     $starttime = microtime(true);
 
     $myquery = "
+        select 
+        host,clientAddr,
+        CONCAT(YEAR(FROM_UNIXTIME(reportTime)),'-', LPAD(MONTH(FROM_UNIXTIME(reportTime)),2,'0')) as t_month
 
-select 
-    host, 
-    clientAddr,
-    CONCAT(YEAR(FROM_UNIXTIME(reportTime)),'-', LPAD(MONTH(FROM_UNIXTIME(reportTime)),2,'0')) as t_month,
-
-from last12months 
-where FROM_UNIXTIME(reportTime) BETWEEN NOW() - INTERVAL 365 DAY AND NOW()
-
-";
+        from jbrowse_client_log 
+        where FROM_UNIXTIME(reportTime) BETWEEN NOW() - INTERVAL 365 DAY AND NOW()
+    ";
 
     $result = mysql_query( $myquery );
     if (!$result) {
             die('Invalid query: ' . mysql_error());
     }
     $count = 0;
+    echo "rows selected = ".mysql_num_rows ( $result )."\n";
     $hosts = array();
     while ($row = mysql_fetch_assoc( $result)) {
 
